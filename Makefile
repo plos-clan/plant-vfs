@@ -21,5 +21,8 @@ libds.a: data_structure/data_structure.c
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o build/data_structure.o
 	ar rcs libds.a build/data_structure.o
+test: CFLAGS := $(DEBUG_CFLAGS)
+test: $(OBJS) libds.a
+	$(CC) $(DEBUG_CFLAGS) memfs.c -o memfs $(OBJS) libds.a -lm
 clean:
 	rm -rf build libvfs.a libds.a
