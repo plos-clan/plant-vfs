@@ -22,4 +22,4 @@ libds.a: data_structure/data_structure.c
 	$(CC) $(CFLAGS) -c $< -o build/data_structure.o
 	ar rcs libds.a build/data_structure.o
 clean:
-	rm -rf build libvfs.a
+	rm -rf build libvfs.a libds.a
