@@ -11,12 +11,15 @@ OBJS := $(SRCS:%.c=build/%.o)
 .PHONY: lib test clean
 
 lib: CFLAGS := $(RELEASE_CFLAGS)
-lib: $(OBJS)
+lib: $(OBJS) libds.a
 	ar rv libvfs.a $(OBJS)
 
 build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-
+libds.a: data_structure/data_structure.c
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o build/data_structure.o
+	ar rcs libds.a build/data_structure.o
 clean:
 	rm -rf build libvfs.a
