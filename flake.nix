@@ -25,12 +25,6 @@
           buildInputs = with pkgs; [
             glibc.dev
           ];
-
-          shellHook = ''
-            export CC=clang
-            export CFLAGS="-I./include -std=gnu2x -Wno-pedantic -Wno-unused-function"
-            mkdir -p build
-          '';
         };
       });
 }
