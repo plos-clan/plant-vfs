@@ -11,24 +11,26 @@ OBJS := $(SRCS:%.c=build/%.o)
 .PHONY: lib test clean example valgrind valgrind-full
 
 lib: CFLAGS := $(RELEASE_CFLAGS)
-lib: $(OBJS) libds.a
-	ar rv libvfs.a $(OBJS)
+lib: $(OBJS)
+	@mkdir -p build
+	@echo '#define ALL_IMPLEMENTATION' > data_structure.c
+	@echo '#include <data-structure.h>' >> data_structure.c
+	$(CC) $(CFLAGS) -c data_structure.c -o build/data_structure.o
+	ar rv libvfs.a $(OBJS) build/data_structure.o
 
 build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-libds.a: data_structure/data_structure.c
-	@mkdir -p build
-	$(CC) $(CFLAGS) -c $< -o build/data_structure.o
-	ar rcs libds.a build/data_structure.o
 
-example: CFLAGS := $(DEBUG_CFLAGS)
-example: lib
-	$(CC) $(CFLAGS) -o example example.c -L. -lvfs -lds
-	./example
+
+test: CFLAGS := $(DEBUG_CFLAGS)
+test: lib
+	$(CC) $(CFLAGS) -o memfs memfs.c -L. -lvfs
+	./memfs
 valgrind: CFLAGS := $(DEBUG_CFLAGS)
-valgrind: example
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./example
+valgrind: lib
+	$(CC) $(CFLAGS) -o memfs memfs.c -L. -lvfs
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./memfs
 
 clean:
-	rm -rf build libvfs.a libds.a example
+	rm -rf build libvfs.a memfs data_structure.c

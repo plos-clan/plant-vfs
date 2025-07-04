@@ -11,6 +11,17 @@
 #include <assert.h>
 #include <vfs.h>
 
+// ANSI color codes
+#define RESET   "\033[0m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define BLUE    "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN    "\033[36m"
+#define WHITE   "\033[37m"
+#define BOLD    "\033[1m"
+
 // Simple in-memory file system for testing
 typedef struct memfs_file {
     char *data;
@@ -70,7 +81,7 @@ static void memfs_add_child(memfs_file_t *parent, memfs_file_t *child) {
 
 // VFS Callback implementations for our memory file system
 static int memfs_mount(const char *src, vfs_node_t node) {
-    printf("[MEMFS] Mounting %s\n", src ? src : "NULL");
+    printf(CYAN "[MEMFS]" RESET " Mounting %s\n", src ? src : "NULL");
     
     if (!memfs_root) {
         memfs_root = memfs_create_file("", file_dir);
@@ -88,13 +99,13 @@ static int memfs_mount(const char *src, vfs_node_t node) {
 }
 
 static void memfs_unmount(void *root) {
-    printf("[MEMFS] Unmounting\n");
+    printf(CYAN "[MEMFS]" RESET " Unmounting\n");
     // In a real implementation, we'd free the file system here
     // For simplicity, we'll leave it allocated
 }
 
 static void memfs_open(void *parent, const char *name, vfs_node_t node) {
-    printf("[MEMFS] Opening %s\n", name);
+    printf(CYAN "[MEMFS]" RESET " Opening %s\n", name);
     
     memfs_file_t *parent_file = (memfs_file_t *)parent;
     memfs_file_t *child = memfs_find_child(parent_file, name);
@@ -110,7 +121,7 @@ static void memfs_open(void *parent, const char *name, vfs_node_t node) {
 }
 
 static void memfs_close(void *current) {
-    printf("[MEMFS] Closing file\n");
+    printf(CYAN "[MEMFS]" RESET " Closing file\n");
     // Nothing special needed for memory files
 }
 
@@ -125,7 +136,7 @@ static ssize_t memfs_read(void *file, void *addr, size_t offset, size_t size) {
     size_t to_read = size < available ? size : available;
     
     memcpy(addr, memfile->data + offset, to_read);
-    printf("[MEMFS] Read %zu bytes from offset %zu\n", to_read, offset);
+    printf(CYAN "[MEMFS]" RESET " Read " GREEN "%zu" RESET " bytes from offset " YELLOW "%zu" RESET "\n", to_read, offset);
     
     return to_read;
 }
@@ -161,12 +172,12 @@ static ssize_t memfs_write(void *file, const void *addr, size_t offset, size_t s
         memfile->size = offset + size;
     }
     
-    printf("[MEMFS] Wrote %zu bytes at offset %zu\n", size, offset);
+    printf(CYAN "[MEMFS]" RESET " Wrote " GREEN "%zu" RESET " bytes at offset " YELLOW "%zu" RESET "\n", size, offset);
     return size;
 }
 
 static int memfs_mkdir(void *parent, const char *name, vfs_node_t node) {
-    printf("[MEMFS] Creating directory %s\n", name);
+    printf(CYAN "[MEMFS]" RESET " Creating directory " BLUE "%s" RESET "\n", name);
     
     memfs_file_t *parent_file = (memfs_file_t *)parent;
     memfs_file_t *new_dir = memfs_create_file(name, file_dir);
@@ -186,7 +197,7 @@ static int memfs_mkdir(void *parent, const char *name, vfs_node_t node) {
 }
 
 static int memfs_mkfile(void *parent, const char *name, vfs_node_t node) {
-    printf("[MEMFS] Creating file %s\n", name);
+    printf(CYAN "[MEMFS]" RESET " Creating file " MAGENTA "%s" RESET "\n", name);
     
     memfs_file_t *parent_file = (memfs_file_t *)parent;
     memfs_file_t *new_file = memfs_create_file(name, file_block);
@@ -232,20 +243,20 @@ static struct vfs_callback memfs_callbacks = {
 
 // Test helper functions
 static void print_separator(const char *title) {
-    printf("\n=== %s ===\n", title);
+    printf("\n" BOLD BLUE "=== %s ===" RESET "\n", title);
 }
 
 static void test_vfs_init() {
     print_separator("Testing VFS Initialization");
     
     bool result = vfs_init();
-    printf("vfs_init() returned: %s\n", result ? "true" : "false");
+    printf("vfs_init() returned: %s\n", result ? GREEN "true" RESET : RED "false" RESET);
     
     if (rootdir) {
-        printf("Root directory created successfully\n");
+        printf(GREEN "Root directory created successfully" RESET "\n");
         printf("Root directory type: %d\n", rootdir->type);
     } else {
-        printf("ERROR: Root directory not created\n");
+        printf(RED "ERROR: Root directory not created" RESET "\n");
     }
 }
 
@@ -253,10 +264,10 @@ static void test_vfs_regist() {
     print_separator("Testing File System Registration");
     
     int fs_id = vfs_regist("memfs", &memfs_callbacks);
-    printf("Registered memfs with ID: %d\n", fs_id);
+    printf("Registered memfs with ID: " YELLOW "%d" RESET "\n", fs_id);
     
     if (fs_id < 0) {
-        printf("ERROR: Failed to register file system\n");
+        printf(RED "ERROR: Failed to register file system" RESET "\n");
         exit(1);
     }
 }
@@ -265,13 +276,13 @@ static void test_vfs_mount() {
     print_separator("Testing File System Mounting");
     
     int result = vfs_mount("memory://", rootdir);
-    printf("vfs_mount() returned: %d\n", result);
+    printf("vfs_mount() returned: %s\n", result == 0 ? GREEN "0" RESET : RED "error" RESET);
     
     if (result == 0) {
-        printf("Successfully mounted memory file system\n");
+        printf(GREEN "Successfully mounted memory file system" RESET "\n");
         printf("Root directory fsid: %d\n", rootdir->fsid);
     } else {
-        printf("ERROR: Failed to mount file system\n");
+        printf(RED "ERROR: Failed to mount file system" RESET "\n");
         exit(1);
     }
 }
@@ -290,7 +301,7 @@ static void test_vfs_mkdir() {
     
     for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++) {
         int result = vfs_mkdir(dirs[i]);
-        printf("vfs_mkdir('%s') returned: %d\n", dirs[i], result);
+        printf("vfs_mkdir('%s') returned: %s\n", dirs[i], result == 0 ? GREEN "0" RESET : RED "error" RESET);
     }
 }
 
@@ -307,7 +318,7 @@ static void test_vfs_mkfile() {
     
     for (size_t i = 0; i < sizeof(files) / sizeof(files[0]); i++) {
         int result = vfs_mkfile(files[i]);
-        printf("vfs_mkfile('%s') returned: %d\n", files[i], result);
+        printf("vfs_mkfile('%s') returned: %s\n", files[i], result == 0 ? GREEN "0" RESET : RED "error" RESET);
     }
 }
 
@@ -325,19 +336,19 @@ static void test_vfs_open() {
     
     for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
         vfs_node_t node = vfs_open(paths[i]);
-        printf("vfs_open('%s') returned: %p", paths[i], (void*)node);
+        printf("vfs_open('%s') returned: ", paths[i]);
         
         if (node) {
-            printf(" (type: %d, size: %llu)\n", node->type, (unsigned long long)node->size);
+            printf(GREEN "%p" RESET " (type: %d, size: %llu)\n", (void*)node, node->type, (unsigned long long)node->size);
             
             // Test getting full path
             char *fullpath = vfs_get_fullpath(node);
             if (fullpath) {
-                printf("  Full path: %s\n", fullpath);
+                printf("  Full path: " CYAN "%s" RESET "\n", fullpath);
                 free(fullpath);
             }
         } else {
-            printf(" (NOT FOUND)\n");
+            printf(RED "NULL" RESET " (NOT FOUND)\n");
         }
     }
 }
@@ -356,22 +367,22 @@ static void test_vfs_write_read() {
     
     if (file1) {
         ssize_t written = vfs_write(file1, test_data1, 0, strlen(test_data1));
-        printf("Wrote %zd bytes to /test/file1.txt\n", written);
+        printf("Wrote " GREEN "%zd" RESET " bytes to /test/file1.txt\n", written);
     }
     
     if (file2) {
         ssize_t written = vfs_write(file2, test_data2, 0, strlen(test_data2));
-        printf("Wrote %zd bytes to /test/file2.txt\n", written);
+        printf("Wrote " GREEN "%zd" RESET " bytes to /test/file2.txt\n", written);
         
         // Test appending
         const char *append_data = "\nAppended line.";
         written = vfs_write(file2, append_data, strlen(test_data2), strlen(append_data));
-        printf("Appended %zd bytes to /test/file2.txt\n", written);
+        printf("Appended " GREEN "%zd" RESET " bytes to /test/file2.txt\n", written);
     }
     
     if (file3) {
         ssize_t written = vfs_write(file3, test_data3, 0, 5);
-        printf("Wrote %zd bytes to /test/subdir1/data.bin\n", written);
+        printf("Wrote " GREEN "%zd" RESET " bytes to /test/subdir1/data.bin\n", written);
     }
     
     // Test reading from files
@@ -380,27 +391,27 @@ static void test_vfs_write_read() {
     if (file1) {
         memset(buffer, 0, sizeof(buffer));
         ssize_t read_bytes = vfs_read(file1, buffer, 0, sizeof(buffer) - 1);
-        printf("Read %zd bytes from /test/file1.txt: '%s'\n", read_bytes, buffer);
+        printf("Read " GREEN "%zd" RESET " bytes from /test/file1.txt: '" YELLOW "%s" RESET "'\n", read_bytes, buffer);
     }
     
     if (file2) {
         memset(buffer, 0, sizeof(buffer));
         ssize_t read_bytes = vfs_read(file2, buffer, 0, sizeof(buffer) - 1);
-        printf("Read %zd bytes from /test/file2.txt: '%s'\n", read_bytes, buffer);
+        printf("Read " GREEN "%zd" RESET " bytes from /test/file2.txt: '" YELLOW "%s" RESET "'\n", read_bytes, buffer);
         
         // Test partial read
         memset(buffer, 0, sizeof(buffer));
         read_bytes = vfs_read(file2, buffer, 10, 10);
         buffer[10] = '\0';
-        printf("Partial read (offset 10, size 10): '%s'\n", buffer);
+        printf("Partial read (offset 10, size 10): '" YELLOW "%s" RESET "'\n", buffer);
     }
     
     if (file3) {
         memset(buffer, 0, sizeof(buffer));
         ssize_t read_bytes = vfs_read(file3, buffer, 0, 5);
-        printf("Read %zd bytes from /test/subdir1/data.bin: ", read_bytes);
+        printf("Read " GREEN "%zd" RESET " bytes from /test/subdir1/data.bin: ", read_bytes);
         for (int i = 0; i < read_bytes; i++) {
-            printf("%02X ", (unsigned char)buffer[i]);
+            printf(MAGENTA "%02X " RESET, (unsigned char)buffer[i]);
         }
         printf("\n");
     }
@@ -413,7 +424,7 @@ static void test_vfs_close() {
     if (file) {
         printf("Opened file for closing test\n");
         int result = vfs_close(file);
-        printf("vfs_close() returned: %d\n", result);
+        printf("vfs_close() returned: %s\n", result == 0 ? GREEN "0" RESET : RED "error" RESET);
     }
 }
 
@@ -427,7 +438,7 @@ static void test_vfs_unmount() {
     if (mount_point) {
         // Mount another instance
         int result = vfs_mount("memory2://", mount_point);
-        printf("Mounted second filesystem: %d\n", result);
+        printf("Mounted second filesystem: %s\n", result == 0 ? GREEN "0" RESET : RED "error" RESET);
         
         if (result == 0) {
             // Create some content
@@ -436,7 +447,7 @@ static void test_vfs_unmount() {
             
             // Now unmount
             result = vfs_unmount("/mnt");
-            printf("vfs_unmount('/mnt') returned: %d\n", result);
+            printf("vfs_unmount('/mnt') returned: %s\n", result == 0 ? GREEN "0" RESET : RED "error" RESET);
         }
     }
 }
@@ -448,26 +459,26 @@ static void test_error_cases() {
     printf("Testing invalid paths:\n");
     
     int result = vfs_mkdir("invalid_path");
-    printf("vfs_mkdir('invalid_path') returned: %d (should be -1)\n", result);
+    printf("vfs_mkdir('invalid_path') returned: " RED "%d" RESET " (should be -1)\n", result);
     
     result = vfs_mkfile("another_invalid");
-    printf("vfs_mkfile('another_invalid') returned: %d (should be -1)\n", result);
+    printf("vfs_mkfile('another_invalid') returned: " RED "%d" RESET " (should be -1)\n", result);
     
     vfs_node_t node = vfs_open("/nonexistent/path");
-    printf("vfs_open('/nonexistent/path') returned: %p (should be NULL)\n", (void*)node);
+    printf("vfs_open('/nonexistent/path') returned: " RED "%p" RESET " (should be NULL)\n", (void*)node);
     
     // Test writing to directory
     vfs_node_t dir = vfs_open("/test");
     if (dir) {
         ssize_t written = vfs_write(dir, "test", 0, 4);
-        printf("Writing to directory returned: %zd (should be -1)\n", written);
+        printf("Writing to directory returned: " RED "%zd" RESET " (should be -1)\n", written);
     }
     
     // Test reading from directory
     if (dir) {
         char buffer[10];
         ssize_t read_bytes = vfs_read(dir, buffer, 0, sizeof(buffer));
-        printf("Reading from directory returned: %zd (should be -1)\n", read_bytes);
+        printf("Reading from directory returned: " RED "%zd" RESET " (should be -1)\n", read_bytes);
     }
 }
 
@@ -513,8 +524,8 @@ static void test_file_tree() {
 }
 
 int main() {
-    printf("VFS Comprehensive Test Example\n");
-    printf("==============================\n");
+    printf(BOLD CYAN "VFS Comprehensive Test Example" RESET "\n");
+    printf(BOLD CYAN "==============================" RESET "\n");
     
     // Run all tests
     test_vfs_init();
@@ -530,18 +541,18 @@ int main() {
     test_file_tree();
     
     print_separator("All Tests Completed");
-    printf("VFS test example completed successfully!\n");
+    printf(BOLD GREEN "VFS test example completed successfully!" RESET "\n");
     printf("This example tested all major VFS functionality:\n");
-    printf("- VFS initialization\n");
-    printf("- File system registration\n");
-    printf("- File system mounting/unmounting\n");
-    printf("- Directory creation\n");
-    printf("- File creation\n");
-    printf("- File opening\n");
-    printf("- File reading/writing\n");
-    printf("- File closing\n");
-    printf("- Path resolution\n");
-    printf("- Error handling\n");
+    printf("- " GREEN "VFS initialization" RESET "\n");
+    printf("- " GREEN "File system registration" RESET "\n");
+    printf("- " GREEN "File system mounting/unmounting" RESET "\n");
+    printf("- " GREEN "Directory creation" RESET "\n");
+    printf("- " GREEN "File creation" RESET "\n");
+    printf("- " GREEN "File opening" RESET "\n");
+    printf("- " GREEN "File reading/writing" RESET "\n");
+    printf("- " GREEN "File closing" RESET "\n");
+    printf("- " GREEN "Path resolution" RESET "\n");
+    printf("- " GREEN "Error handling" RESET "\n");
     
     return 0;
 }
