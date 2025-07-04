@@ -8,7 +8,7 @@ RELEASE_CFLAGS := $(CFLAGS) -O3 -DNDEBUG $(USER_CFLAGS)
 SRCS := vfs.c
 OBJS := $(SRCS:%.c=build/%.o)
 
-.PHONY: lib test clean
+.PHONY: lib test clean example valgrind valgrind-full
 
 lib: CFLAGS := $(RELEASE_CFLAGS)
 lib: $(OBJS) libds.a
@@ -21,8 +21,14 @@ libds.a: data_structure/data_structure.c
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o build/data_structure.o
 	ar rcs libds.a build/data_structure.o
-test: CFLAGS := $(DEBUG_CFLAGS)
-test: $(OBJS) libds.a
-	$(CC) $(DEBUG_CFLAGS) memfs.c -o memfs $(OBJS) libds.a -lm
+
+example: CFLAGS := $(DEBUG_CFLAGS)
+example: lib
+	$(CC) $(CFLAGS) -o example example.c -L. -lvfs -lds
+	./example
+valgrind: CFLAGS := $(DEBUG_CFLAGS)
+valgrind: example
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./example
+
 clean:
-	rm -rf build libvfs.a libds.a
+	rm -rf build libvfs.a libds.a example
