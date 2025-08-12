@@ -80,7 +80,7 @@ static void memfs_add_child(memfs_file_t *parent, memfs_file_t *child) {
 }
 
 // VFS Callback implementations for our memory file system
-static int memfs_mount(const char *src, vfs_node_t node) {
+static int memfs_mount(const char *src, vfs_info_t node) {
     printf(CYAN "[MEMFS]" RESET " Mounting %s\n", src ? src : "NULL");
 
     if (!memfs_root) {
@@ -104,7 +104,7 @@ static void memfs_unmount(void *root) {
     // For simplicity, we'll leave it allocated
 }
 
-static void memfs_open(void *parent, const char *name, vfs_node_t node) {
+static void memfs_open(void *parent, const char *name, vfs_info_t node) {
     printf(CYAN "[MEMFS]" RESET " Opening %s\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
@@ -175,7 +175,7 @@ static ssize_t memfs_write(void *file, const void *addr, size_t offset, size_t s
     return size;
 }
 
-static int memfs_mkdir(void *parent, const char *name, vfs_node_t node) {
+static int memfs_mkdir(void *parent, const char *name, vfs_info_t node) {
     printf(CYAN "[MEMFS]" RESET " Creating directory " BLUE "%s" RESET "\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
@@ -195,7 +195,7 @@ static int memfs_mkdir(void *parent, const char *name, vfs_node_t node) {
     return 0;
 }
 
-static int memfs_mkfile(void *parent, const char *name, vfs_node_t node) {
+static int memfs_mkfile(void *parent, const char *name, vfs_info_t node) {
     printf(CYAN "[MEMFS]" RESET " Creating file " MAGENTA "%s" RESET "\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
@@ -215,7 +215,7 @@ static int memfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     return 0;
 }
 
-static int memfs_stat(void *file, vfs_node_t node) {
+static int memfs_stat(void *file, vfs_info_t node) {
     memfs_file_t *memfile = (memfs_file_t *)file;
 
     if (!memfile) return -1;
@@ -253,7 +253,7 @@ static void test_vfs_init() {
 
     if (rootdir) {
         printf(GREEN "Root directory created successfully" RESET "\n");
-        printf("Root directory type: %d\n", rootdir->type);
+        printf("Root directory type: %d\n", rootdir->info->type);
     } else {
         printf(RED "ERROR: Root directory not created" RESET "\n");
     }
@@ -279,7 +279,7 @@ static void test_vfs_mount() {
 
     if (result == 0) {
         printf(GREEN "Successfully mounted memory file system" RESET "\n");
-        printf("Root directory fsid: %d\n", rootdir->fsid);
+        printf("Root directory fsid: %d\n", rootdir->info->fsid);
     } else {
         printf(RED "ERROR: Failed to mount file system" RESET "\n");
         exit(1);
@@ -338,7 +338,7 @@ static void test_vfs_open() {
         printf("vfs_open('%s') returned: ", paths[i]);
 
         if (node) {
-            printf(GREEN "%p" RESET " (type: %d, size: %llu)\n", (void*)node, node->type, (unsigned long long)node->size);
+            printf(GREEN "%p" RESET " (type: %d, size: %llu)\n", (void*)node, node->info->type, (unsigned long long)node->info->size);
 
             // Test getting full path
             char *fullpath = vfs_get_fullpath(node);
@@ -491,8 +491,8 @@ static void print_file_tree(vfs_node_t node, int depth) {
     char *fullpath = vfs_get_fullpath(node);
     printf("%s (%s, size: %llu)\n",
            fullpath ? fullpath : "NULL",
-           node->type == file_dir ? "dir" : "file",
-           (unsigned long long)node->size);
+           node->info->type == file_dir ? "dir" : "file",
+           (unsigned long long)node->info->size);
 
     if (fullpath) free(fullpath);
 
