@@ -67,17 +67,35 @@ finline ssize_t fhsb64(u64 x) {
   if (x == 0) return -1;
   return 63 - clz(x);
 }
+#if __SIZEOF_LONG__ == 4  // 32-bit
 #  define fhsb(x)                                                                                  \
     _Generic((x),                                                                                  \
-        u8: fhsb8(x),                                                                              \
+        u8:  fhsb8(x),                                                                             \
         u16: fhsb16(x),                                                                            \
-        u32: fhsb32(x),                                                                            \
+        u32: fhsb32(x),                                                                             \
+        unsigned long: fhsb32(x), /* usize / size_t 对应 */                                       \
         u64: fhsb64(x),                                                                            \
-        i8: fhsb8(x),                                                                              \
+        i8:  fhsb8(x),                                                                             \
         i16: fhsb16(x),                                                                            \
-        i32: fhsb32(x),                                                                            \
+        i32: fhsb32(x),                                                                             \
+        long: fhsb32(x),                                                                           \
         i64: fhsb64(x))
-
+#elif __SIZEOF_LONG__ == 8  // 64-bit
+#  define fhsb(x)                                                                                  \
+    _Generic((x),                                                                                  \
+        u8:  fhsb8(x),                                                                             \
+        u16: fhsb16(x),                                                                            \
+        u32: fhsb32(x),                                                                             \
+        u64: fhsb64(x),                                                                            \
+        unsigned long: fhsb64(x), /* usize / size_t 对应 */                                       \
+        i8:  fhsb8(x),                                                                             \
+        i16: fhsb16(x),                                                                            \
+        i32: fhsb32(x),                                                                             \
+        i64: fhsb64(x),                                                                            \
+        long: fhsb64(x))
+#else
+#  error "Unsupported architecture for usize"
+#endif
 // --------------------------------------------------
 //; 位逆序
 

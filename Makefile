@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 CC ?= clang
 CFLAGS := -I./include -std=gnu2x -Wno-pedantic -Wno-unused-function
 DEBUG_CFLAGS := $(CFLAGS) -g -Og $(USER_CFLAGS)

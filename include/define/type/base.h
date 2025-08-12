@@ -28,8 +28,12 @@ typedef __UINT8_TYPE__ byte;
 
 typedef int errno_t;
 
+// APPLE你在搞什么鬼？
+#ifdef __APPLE__
+typedef long time_t;
+#else
 typedef __INT64_TYPE__ time_t;
-
+#endif
 #ifdef __cplusplus
 #  define lit constexpr
 #endif
