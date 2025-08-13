@@ -46,8 +46,7 @@
 #define FILE_BLKSIZE PAGE_SIZE
 
 typedef struct vfs_node *vfs_node_t;
-typedef struct vfs_node_info *vfs_info_t;
-typedef int (*vfs_mount_t)(cstr src, vfs_info_t node);
+typedef int (*vfs_mount_t)(cstr src, vfs_node_t node);
 typedef void (*vfs_unmount_t)(void *root);
 
 /**
@@ -57,7 +56,7 @@ typedef void (*vfs_unmount_t)(void *root);
  *\param name     文件名
  *\param node     文件节点
  */
-typedef void (*vfs_open_t)(void *parent, cstr name, vfs_info_t node);
+typedef void (*vfs_open_t)(void *parent, cstr name, vfs_node_t node);
 
 /**
  *\brief 关闭一个文件
@@ -102,10 +101,10 @@ typedef ssize_t (*vfs_read_t)(void *file, void *addr, size_t offset,
  *\param file     文件句柄
  *\param node     文件节点
  */
-typedef int (*vfs_stat_t)(void *file, vfs_info_t node);
+typedef int (*vfs_stat_t)(void *file, vfs_node_t node);
 
 // 创建一个文件或文件夹
-typedef int (*vfs_mk_t)(void *parent, cstr name, vfs_info_t node);
+typedef int (*vfs_mk_t)(void *parent, cstr name, vfs_node_t node);
 
 // 映射文件从 offset 开始的 size 大小
 typedef void *(*vfs_mapfile_t)(void *file, size_t offset, size_t size);
@@ -115,7 +114,6 @@ enum {
   file_dir,     // 文件夹
   file_block,   // 块设备，如硬盘
   file_stream,  // 流式设备，如终端
-  file_symlink, // 软链接
 };
 
 typedef struct vfs_callback {
@@ -141,7 +139,7 @@ struct vfs_node_info {
   u32 permissions; // 权限
   u16 fsid;        // 文件系统的 id
   void *handle;    // 操作文件的句柄
-  list_t child;    // 子目录和子文件
+  list_t childs;    // 这个文件夹可能被软链接，所以需要存储所有的子节点
   vfs_node_t root; // 根目录
 }; // 用于读取文件的重要信息
 // 对于硬链接的文件，删除时真实文件系统应当注意处理同一个文件的多个分身的关系。
@@ -151,6 +149,7 @@ struct vfs_node {
   char *name;         // 名称
 
   struct vfs_node_info *info; // 文件信息
+  list_t child; // 子目录和子文件
 };
 
 struct fd {
@@ -179,7 +178,7 @@ int vfs_regist(cstr name, vfs_callback_t callback);
 #undef FILENAME_MAX
 #define FILENAME_MAX 256 // 文件名最大长度
 
-vfs_node_t vfs_open(cstr _path);
+vfs_node_t vfs_open(cstr path);
 
 /**
  *\brief 创建文件夹

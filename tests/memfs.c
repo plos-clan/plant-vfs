@@ -80,7 +80,7 @@ static void memfs_add_child(memfs_file_t *parent, memfs_file_t *child) {
 }
 
 // VFS Callback implementations for our memory file system
-static int memfs_mount(const char *src, vfs_info_t node) {
+static int memfs_mount(const char *src, vfs_node_t node) {
     printf(CYAN "[MEMFS]" RESET " Mounting %s\n", src ? src : "NULL");
 
     if (!memfs_root) {
@@ -88,12 +88,12 @@ static int memfs_mount(const char *src, vfs_info_t node) {
         if (!memfs_root) return -1;
     }
 
-    node->handle = memfs_root;
-    node->type = file_dir;
-    node->size = 0;
-    node->createtime = time(NULL);
-    node->readtime = time(NULL);
-    node->writetime = time(NULL);
+    node->info->handle = memfs_root;
+    node->info->type = file_dir;
+    node->info->size = 0;
+    node->info->createtime = time(NULL);
+    node->info->readtime = time(NULL);
+    node->info->writetime = time(NULL);
 
     return 0;
 }
@@ -104,19 +104,19 @@ static void memfs_unmount(void *root) {
     // For simplicity, we'll leave it allocated
 }
 
-static void memfs_open(void *parent, const char *name, vfs_info_t node) {
+static void memfs_open(void *parent, const char *name, vfs_node_t node) {
     printf(CYAN "[MEMFS]" RESET " Opening %s\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
     memfs_file_t *child = memfs_find_child(parent_file, name);
 
     if (child) {
-        node->handle = child;
-        node->type = child->type;
-        node->size = child->size;
-        node->createtime = time(NULL);
-        node->readtime = time(NULL);
-        node->writetime = time(NULL);
+        node->info->handle = child;
+        node->info->type = child->type;
+        node->info->size = child->size;
+        node->info->createtime = time(NULL);
+        node->info->readtime = time(NULL);
+        node->info->writetime = time(NULL);
     }
 }
 
@@ -175,7 +175,7 @@ static ssize_t memfs_write(void *file, const void *addr, size_t offset, size_t s
     return size;
 }
 
-static int memfs_mkdir(void *parent, const char *name, vfs_info_t node) {
+static int memfs_mkdir(void *parent, const char *name, vfs_node_t node) {
     printf(CYAN "[MEMFS]" RESET " Creating directory " BLUE "%s" RESET "\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
@@ -185,17 +185,17 @@ static int memfs_mkdir(void *parent, const char *name, vfs_info_t node) {
 
     memfs_add_child(parent_file, new_dir);
 
-    node->handle = new_dir;
-    node->type = file_dir;
-    node->size = 0;
-    node->createtime = time(NULL);
-    node->readtime = time(NULL);
-    node->writetime = time(NULL);
+    node->info->handle = new_dir;
+    node->info->type = file_dir;
+    node->info->size = 0;
+    node->info->createtime = time(NULL);
+    node->info->readtime = time(NULL);
+    node->info->writetime = time(NULL);
 
     return 0;
 }
 
-static int memfs_mkfile(void *parent, const char *name, vfs_info_t node) {
+static int memfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     printf(CYAN "[MEMFS]" RESET " Creating file " MAGENTA "%s" RESET "\n", name);
 
     memfs_file_t *parent_file = (memfs_file_t *)parent;
@@ -205,24 +205,24 @@ static int memfs_mkfile(void *parent, const char *name, vfs_info_t node) {
 
     memfs_add_child(parent_file, new_file);
 
-    node->handle = new_file;
-    node->type = file_block;
-    node->size = 0;
-    node->createtime = time(NULL);
-    node->readtime = time(NULL);
-    node->writetime = time(NULL);
+    node->info->handle = new_file;
+    node->info->type = file_block;
+    node->info->size = 0;
+    node->info->createtime = time(NULL);
+    node->info->readtime = time(NULL);
+    node->info->writetime = time(NULL);
 
     return 0;
 }
 
-static int memfs_stat(void *file, vfs_info_t node) {
+static int memfs_stat(void *file, vfs_node_t node) {
     memfs_file_t *memfile = (memfs_file_t *)file;
 
     if (!memfile) return -1;
 
-    node->type = memfile->type;
-    node->size = memfile->size;
-    node->readtime = time(NULL);
+    node->info->type = memfile->type;
+    node->info->size = memfile->size;
+    node->info->readtime = time(NULL);
 
     return 0;
 }
